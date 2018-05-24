@@ -1,0 +1,75 @@
+<body>
+
+<script type="text/javascript">
+var imgSrc = "./3.jpg";
+var lutSrc = "./lut.png";
+window.onload = function() {
+	document.getElementById("myImg").setAttribute("src", imgSrc);
+
+	var img = new Image,
+	    canvas = document.getElementById("myCanvas"),
+	    ctx = canvas.getContext("2d");
+
+	img.src = imgSrc;
+	img.onload = function() {
+	    canvas.width = img.width;
+	    canvas.height = img.height;
+	    ctx.drawImage(img, 0, 0);
+	    localStorage.setItem( "savedImageData", canvas.toDataURL("image/png") );
+	    loadLut(canvas, ctx, lutSrc);
+	}
+}
+
+
+function loadLut(canvasImg, ctxImg, src){
+	var imgLut = new Image,
+	canvasLut = document.getElementById("myCanvasLut"),
+	ctxLut = canvasLut.getContext("2d"); 
+
+	imgLut.src = src;
+	imgLut.onload = function() {
+		canvasLut.width = imgLut.width;
+		canvasLut.height = imgLut.height;
+		ctxLut.drawImage( imgLut, 0, 0 );
+		filterImage(canvasImg, ctxImg, canvasLut, ctxLut);
+		localStorage.setItem( "savedImageDataLut", canvasLut.toDataURL("image/png") );
+	}
+}
+
+function filterImage(canvasImg, ctxImg, canvasLut, ctxLut){
+	var lutWidth = canvasLut.width;
+	var imgData = ctxImg.getImageData(0,0,canvasImg.width,canvasImg.height);
+	var filterData = ctxLut.getImageData(0,0,canvasLut.width,canvasLut.height);
+	
+	for (var i=0;i<imgData.data.length;i+=4){
+		var r=Math.floor(imgData.data[i]/4);
+		var g=Math.floor(imgData.data[i+1]/4);
+		var b=Math.floor(imgData.data[i+2]/4);    
+		var a=255;
+			
+		var lutX = (b % 8) * 64 + r;
+		var lutY = Math.floor(b / 8) * 64 + g;
+		var lutIndex = (lutY * lutWidth + lutX)*4;
+
+		var Rr =  filterData.data[lutIndex];
+		var Gg =  filterData.data[lutIndex+1];    
+		var Bb =  filterData.data[lutIndex+2];
+		
+		imgData.data[i] = filterData.data[lutIndex];
+		imgData.data[i+1] = filterData.data[lutIndex+1];
+		imgData.data[i+2] = filterData.data[lutIndex+2];
+		imgData.data[i+3] = 255;
+
+	}
+	ctxImg.putImageData(imgData,0,0);
+}
+</script>
+
+<img id="myImg"/>
+<canvas id="myCanvas" width="640" height="480" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+<canvas id="myCanvasLut" width="640" height="480" style="border:1px solid #d3d3d3;">
+Your browser does not support the HTML5 canvas tag.</canvas>
+
+
+</body>
